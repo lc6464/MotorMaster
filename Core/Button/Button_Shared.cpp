@@ -6,4 +6,4 @@ static const PortPinPair motorButtonPair(Key_Motor_GPIO_Port, Key_Motor_Pin); //
 
 Button displayButton(displayButtonPair);
 Button motorButton(motorButtonPair);
-Button ec11Button = ec11.GetButton();
+Button &ec11Button = ec11.GetButton();

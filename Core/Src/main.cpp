@@ -21,23 +21,25 @@ int main(void) {
 	MX_GPIO_Init();
 	MX_DMA_Init();
 	MX_I2C1_Init();
-	MX_TIM4_Init();
-	MX_TIM3_Init();
-	MX_TIM1_Init();
-	MX_TIM2_Init();
+	MX_TIM1_Init(); // Input Capture
+	MX_TIM2_Init(); // PWM Output
+	MX_TIM3_Init(); // Timer for 1ms
+	MX_TIM4_Init(); // Encoder for EC11
 	MX_I2C2_Init();
 
 	RegisterUserControlCallbacks();
 
+	HAL_TIM_Base_Start(&htim2);
+	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+
 	ssd1306.Start();
 	ec11.Start();
 	motor.PowerOn();
-	motor.Start();
+	// motor.Start();
 
 	Status::motorStatus = Status::MotorStatus::Shutdown;
 
 	HAL_TIM_Base_Start_IT(&htim3);
-
 
 	while (1) {
 	}
@@ -48,8 +50,8 @@ int main(void) {
 	* @retval None
 	*/
 void SystemClock_Config(void) {
-	RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
-	RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
+	RCC_OscInitTypeDef RCC_OscInitStruct{};
+	RCC_ClkInitTypeDef RCC_ClkInitStruct{};
 
 	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
 	RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;

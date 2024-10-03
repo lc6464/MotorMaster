@@ -16,7 +16,7 @@ public:
 	 * @param power5V 5V 控制引脚
 	 */
 	explicit Motor(TIM_HandleTypeDef &htim, uint32_t channel, const PortPinPair &brake, const PortPinPair &power, const PortPinPair &power5V)
-		: _htim(htim), _channel(channel), _brake(brake), _power(power), _power5V(power5V), _currentSpeed(0) {
+		: _htim(htim), _channel(channel), _brake(brake), _power(power), _power5V(power5V) {
 		assert_param(channel != 0);
 	}
 
@@ -60,13 +60,9 @@ public:
 	 * @param speed 速度值, 范围为 [0, 4000]
 	 * @note 速度为 0 时, 电机停止但不刹车
 	 */
-	void SetSpeed(uint16_t speed);
-
-	/**
-	 * @brief 获取当前电机速度
-	 * @return 当前速度值
-	 */
-	uint16_t GetSpeed() const { return _currentSpeed; }
+	void SetSpeed(uint16_t speed) {
+		__HAL_TIM_SET_COMPARE(&_htim, _channel, std::min(speed, MAX_SPEED));
+	}
 
 private:
 	static constexpr uint16_t MAX_SPEED = 4000;
@@ -78,12 +74,12 @@ private:
 	const PortPinPair &_power; // 电源控制引脚
 	const PortPinPair &_power5V; // 5V 控制引脚
 
-	uint16_t _currentSpeed; // 当前速度
-
 	/**
 	 * @brief 设置引脚状态
 	 * @param pin 引脚对
 	 * @param state 引脚状态
 	 */
-	static void SetPinState(const PortPinPair &pin, GPIO_PinState state);
+	static void SetPinState(const PortPinPair &pin, GPIO_PinState state) {
+		HAL_GPIO_WritePin(pin.Port, pin.Pin, state);
+	}
 };

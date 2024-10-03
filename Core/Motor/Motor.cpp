@@ -16,28 +16,19 @@ void Motor::PowerOff() {
 
 HAL_StatusTypeDef Motor::Start() {
 	// 启动顺序：启用 PWM -> 解除刹车
-	auto status = HAL_TIM_PWM_Start(&_htim, _channel);
-	if (status == HAL_OK) {
-		SetPinState(_brake, GPIO_PIN_RESET);  // 解除刹车
-	}
-	return status;
+	// auto status = HAL_TIM_PWM_Start(&_htim, _channel);
+	// if (status == HAL_OK) {
+	SetPinState(_brake, GPIO_PIN_RESET);  // 解除刹车
+	// }
+	// return status;
+	return HAL_OK;
 }
 
 HAL_StatusTypeDef Motor::Stop() {
 	// 停止顺序：启用刹车 -> 停止 PWM
 	SetPinState(_brake, GPIO_PIN_SET);  // 启用刹车
-	auto status = HAL_TIM_PWM_Stop(&_htim, _channel);
-	if (status == HAL_OK) {
-		_currentSpeed = 0;
-	}
-	return status;
-}
-
-void Motor::SetSpeed(uint16_t speed) {
-	_currentSpeed = std::min(speed, MAX_SPEED);
-	__HAL_TIM_SET_COMPARE(&_htim, _channel, _currentSpeed);
-}
-
-void Motor::SetPinState(const PortPinPair &pin, GPIO_PinState state) {
-	HAL_GPIO_WritePin(pin.Port, pin.Pin, state);
+	SetSpeed(0);  // 停止 PWM
+	// auto status = HAL_TIM_PWM_Stop(&_htim, _channel);
+	// return status;
+	return HAL_OK;
 }

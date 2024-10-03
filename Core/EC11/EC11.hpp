@@ -17,7 +17,7 @@ public:
 	 * @param htim 编码器定时器句柄引用
 	 * @param button 按键 GPIO 引用
 	 */
-	explicit EC11(TIM_HandleTypeDef &htim, const PortPinPair &button)
+	explicit EC11(TIM_HandleTypeDef &htim, Button &button)
 		: _htim(htim), _button(button) { }
 
 	/**

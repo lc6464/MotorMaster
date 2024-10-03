@@ -18,7 +18,15 @@ namespace Status {
 		Error         // 状态错误
 	};
 
-	// 电机状态
-	extern MotorStatus motorStatus;
+	// 速度修改倍率
+	enum class SpeedChangeRate {
+		X0,    // 不允许修改速度
+		X5,    // 旋转编码器时 +5% 或 -5%
+		X10,   // 旋转编码器时 +10% 或 -10%
+	};
+
+	// 状态
+	extern MotorStatus motorStatus;         // 电机状态
+	extern SpeedChangeRate speedChangeRate; // 速度修改倍率
 
 }

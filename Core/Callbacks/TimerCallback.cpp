@@ -13,7 +13,7 @@ void UpdateScreen(void) {
 	// 目标速度百分比
 	ssd1306.Clear();
 	ssd1306.SetCursor(0, 0);
-	ssd1306.WriteString("Target: ", SSD1306Fonts::Font_11x18);
+	ssd1306.WriteString("Target:", SSD1306Fonts::Font_11x18);
 
 	// X0 时常亮；X5 时 600ms 闪烁一次；X10 时 200ms 闪烁一次
 	char speedStr[5] = { 0 };
@@ -36,7 +36,7 @@ void UpdateScreen(void) {
 
 	// 输出速度百分比
 	ssd1306.SetCursor(0, 20);
-	ssd1306.WriteString("Speed: ", SSD1306Fonts::Font_11x18);
+	ssd1306.WriteString("Speed:", SSD1306Fonts::Font_11x18);
 
 	length = int8ToString(Status::speedPercentage, speedStr);
 	speedStr[length] = '%';

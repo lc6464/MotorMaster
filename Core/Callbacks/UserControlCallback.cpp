@@ -4,6 +4,7 @@
 #include "EC11_Shared.h"
 #include "Motor_Shared.h"
 #include "Status.h"
+#include "WatchDog_Shared.h"
 
 static uint8_t ec11ClockwiseCallbackScaler = 0;
 static uint8_t ec11CounterClockwiseCallbackScaler = 0;
@@ -37,6 +38,7 @@ static inline void EC11ClockwiseCallback(void) {
 		return;
 	}
 
+	speedChangeRateWatchDog.Feed();
 	ec11ClockwiseCallbackScaler = 0;
 	if (Status::speedChangeRate != Status::SpeedChangeRate::X0
 		&& (Status::motorStatus == Status::MotorStatus::Running || Status::motorStatus == Status::MotorStatus::Stopped)) {
@@ -51,6 +53,7 @@ static inline void EC11CounterClockwiseCallback(void) {
 		return;
 	}
 
+	speedChangeRateWatchDog.Feed();
 	ec11CounterClockwiseCallbackScaler = 0;
 	if (Status::speedChangeRate != Status::SpeedChangeRate::X0 && Status::motorStatus == Status::MotorStatus::Running) {
 		Status::targetSpeedPercentage = std::max(Status::targetSpeedPercentage - Status::speedChangeRate, static_cast<int8_t>(0));
@@ -69,10 +72,15 @@ static inline void EC11ShortPressCallback(void) {
 	// x0 -> x5 -> x10 -> x0
 	if (Status::speedChangeRate == Status::SpeedChangeRate::X0) {
 		Status::speedChangeRate = Status::SpeedChangeRate::X5;
+		speedChangeRateWatchDog.Enable();
+		speedChangeRateWatchDog.Feed();
 	} else if (Status::speedChangeRate == Status::SpeedChangeRate::X5) {
+		speedChangeRateWatchDog.Enable();
+		speedChangeRateWatchDog.Feed();
 		Status::speedChangeRate = Status::SpeedChangeRate::X10;
 	} else if (Status::speedChangeRate == Status::SpeedChangeRate::X10) {
 		Status::speedChangeRate = Status::SpeedChangeRate::X0;
+		speedChangeRateWatchDog.Disable();
 	}
 }
 
@@ -80,6 +88,7 @@ static inline void EC11ShortPressCallback(void) {
 static inline void EC11LongPressCallback(void) {
 	// -> x0
 	Status::speedChangeRate = Status::SpeedChangeRate::X0;
+	speedChangeRateWatchDog.Disable();
 }
 
 // 电机控制按钮按下回调
@@ -101,10 +110,12 @@ static inline void MotorButtonShortPressCallback(void) {
 
 // 电机控制按钮长按回调：急停关机
 static inline void MotorButtonLongPressCallback(void) {
+	speedChangeRateWatchDog.Disable();
+
 	if (Status::motorStatus == Status::MotorStatus::PowerOff) {
 		Status::motorStatus = Status::MotorStatus::Shutdown;
 		motor.PowerOn();
-	} else if (Status::motorStatus == Status::MotorStatus::Shutdown || Status::motorStatus == Status::MotorStatus::Stopped) {
+	} else if (Status::motorStatus == Status::MotorStatus::Shutdown || Status::motorStatus == Status::MotorStatus::Stopped || Status::motorStatus == Status::MotorStatus::Braking) {
 		Status::motorStatus = Status::MotorStatus::PowerOff;
 		motor.PowerOff();
 	} else if (Status::motorStatus == Status::MotorStatus::Running || Status::motorStatus == Status::MotorStatus::Decelerating) {
@@ -112,9 +123,6 @@ static inline void MotorButtonLongPressCallback(void) {
 		motor.Stop();
 		Status::targetSpeedPercentage = 0;
 		Status::speedPercentage = 0;
-	} else if (Status::motorStatus == Status::MotorStatus::Braking) {
-		Status::motorStatus = Status::MotorStatus::PowerOff;
-		motor.PowerOff();
 	}
 }
 

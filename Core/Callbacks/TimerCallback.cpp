@@ -6,8 +6,9 @@
 #include "SSD1306_Shared.h"
 #include "Status.h"
 #include "strings.h"
+#include "WatchDog_Shared.h"
 
-static uint16_t targetFlashingScaler = 0;
+static uint16_t flashingScaler = 0;
 
 void UpdateScreen(void) {
 	// Power Off
@@ -16,6 +17,34 @@ void UpdateScreen(void) {
 		ssd1306.SetCursor(14, 23);
 		ssd1306.WriteString("Power Off", SSD1306Fonts::Font_11x18);
 		ssd1306.UpdateScreen();
+		return;
+	}
+
+	// Shutdown
+	if (Status::motorStatus == Status::MotorStatus::Shutdown) {
+		ssd1306.Clear();
+		ssd1306.SetCursor(48, 24);
+		ssd1306.WriteString("!\"", SSD1306Fonts::Font_CN); // 停止
+		ssd1306.UpdateScreen();
+		return;
+	}
+
+	// Brake
+	if (Status::motorStatus == Status::MotorStatus::Braking) {
+		ssd1306.Clear();
+
+		// 200ms 闪烁一次
+		if (flashingScaler < 2) {
+			ssd1306.SetCursor(48, 24);
+			ssd1306.WriteString(" !", SSD1306Fonts::Font_CN); // 急停
+		}
+
+		if (++flashingScaler >= 4) {
+			flashingScaler = 0;
+		}
+
+		ssd1306.UpdateScreen();
+
 		return;
 	}
 
@@ -41,16 +70,16 @@ void UpdateScreen(void) {
 	if (Status::speedChangeRate == Status::SpeedChangeRate::X0) {
 		ssd1306.WriteString(speedStr, SSD1306Fonts::Font_11x18);
 	} else if (Status::speedChangeRate == Status::SpeedChangeRate::X5) {
-		if (targetFlashingScaler % 12 < 6) {
+		if (flashingScaler % 12 < 6) {
 			ssd1306.WriteString(speedStr, SSD1306Fonts::Font_11x18);
 		}
 	} else if (Status::speedChangeRate == Status::SpeedChangeRate::X10) {
-		if (targetFlashingScaler % 4 < 2) {
+		if (flashingScaler % 4 < 2) {
 			ssd1306.WriteString(speedStr, SSD1306Fonts::Font_11x18);
 		}
 	}
-	if (++targetFlashingScaler >= 24) {
-		targetFlashingScaler = 0;
+	if (++flashingScaler >= 24) {
+		flashingScaler = 0;
 	}
 
 	// // 输出速度百分比
@@ -80,6 +109,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		motorButton.Tick();
 		ec11Button.Tick();
 		ec11.UpdateRotation();
+		speedChangeRateWatchDog.Tick();
 
 		// 50ms
 		if (timer3_scaler % 50 == 0) {
@@ -107,8 +137,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 		}
 
-		// 800ms
-		if (timer3_scaler == 800) {
+		// 500ms
+		if (timer3_scaler == 500) {
 			motor.SetSpeed(static_cast<uint16_t>(Status::speedPercentage) * 40); // 0~100 -> 0~4000
 		}
 

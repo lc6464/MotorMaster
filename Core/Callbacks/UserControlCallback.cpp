@@ -60,7 +60,7 @@ static inline void EC11CounterClockwiseCallback(void) {
 	}
 }
 
-// 旋转编码器按下回调
+// 旋转编码器按下回调：切换速度切换倍率
 static inline void EC11ShortPressCallback(void) {
 	if (Status::motorStatus != Status::MotorStatus::Running && Status::motorStatus != Status::MotorStatus::Stopped) {
 		return;
@@ -76,6 +76,7 @@ static inline void EC11ShortPressCallback(void) {
 	}
 }
 
+// 旋转编码器长按回调：将速度切换倍率设为 x0
 static inline void EC11LongPressCallback(void) {
 	// -> x0
 	Status::speedChangeRate = Status::SpeedChangeRate::X0;
@@ -98,6 +99,25 @@ static inline void MotorButtonShortPressCallback(void) {
 	}
 }
 
+// 电机控制按钮长按回调：急停关机
+static inline void MotorButtonLongPressCallback(void) {
+	if (Status::motorStatus == Status::MotorStatus::PowerOff) {
+		Status::motorStatus = Status::MotorStatus::Shutdown;
+		motor.PowerOn();
+	} else if (Status::motorStatus == Status::MotorStatus::Shutdown || Status::motorStatus == Status::MotorStatus::Stopped) {
+		Status::motorStatus = Status::MotorStatus::PowerOff;
+		motor.PowerOff();
+	} else if (Status::motorStatus == Status::MotorStatus::Running || Status::motorStatus == Status::MotorStatus::Decelerating) {
+		Status::motorStatus = Status::MotorStatus::Braking;
+		motor.Stop();
+		Status::targetSpeedPercentage = 0;
+		Status::speedPercentage = 0;
+	} else if (Status::motorStatus == Status::MotorStatus::Braking) {
+		Status::motorStatus = Status::MotorStatus::PowerOff;
+		motor.PowerOff();
+	}
+}
+
 // 注册用户控制回调函数
 void RegisterUserControlCallbacks(void) {
 	ec11Button.RegisterShortPressCallback(EC11ShortPressCallback);
@@ -105,4 +125,5 @@ void RegisterUserControlCallbacks(void) {
 	ec11.RegisterClockwiseCallback(EC11ClockwiseCallback);
 	ec11.RegisterCounterClockwiseCallback(EC11CounterClockwiseCallback);
 	motorButton.RegisterShortPressCallback(MotorButtonShortPressCallback);
+	motorButton.RegisterLongPressCallback(MotorButtonLongPressCallback);
 }

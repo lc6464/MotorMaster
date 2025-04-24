@@ -8,7 +8,8 @@
 #include "Motor_Shared.h"
 #include "Status.h"
 #include "SSD1306_Shared.h"
-#include "UserControlCallback.h"
+
+void RegisterUserControlCallbacks(void);
 
 /**
 	* @brief  The application entry point.
@@ -34,10 +35,8 @@ int main(void) {
 
 	ssd1306.Start();
 	ec11.Start();
-	motor.PowerOn();
+	// motor.PowerOn();
 	// motor.Start();
-
-	Status::motorStatus = Status::MotorStatus::Shutdown;
 
 	HAL_TIM_Base_Start_IT(&htim3);
 

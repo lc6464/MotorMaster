@@ -18,6 +18,7 @@ HAL_StatusTypeDef Motor::Start() {
 	// 启动顺序：启用 PWM -> 解除刹车
 	// auto status = HAL_TIM_PWM_Start(&_htim, _channel);
 	// if (status == HAL_OK) {
+	SetSpeed(0);
 	SetPinState(_brake, GPIO_PIN_RESET);  // 解除刹车
 	// }
 	// return status;

@@ -1,4 +1,4 @@
-#include "SSD1306.hpp"
+#include "SSD1306.h"
 
 HAL_StatusTypeDef SSD1306::Start() {
 	uint8_t status = 0; // 初始化状态变量为0
@@ -52,10 +52,11 @@ HAL_StatusTypeDef SSD1306::Start() {
 	}
 
 	// 清屏
-	Fill(Color::Black);
+	Clear();
 
 	// 刷新缓冲区到屏幕
-	UpdateScreen();
+	// 时钟速率为 400kHz 时，刷新屏幕需要接近 25ms；时钟速率为 100kHz 时，刷新屏幕需要接近 100ms
+	HAL_I2C_Mem_Write(_hi2c, _i2c_address, 0x40, I2C_MEMADD_SIZE_8BIT, _buffer.data(), _buffer.size(), 30);
 
 	// 设置默认值
 	_currentX = 0;
@@ -66,18 +67,16 @@ HAL_StatusTypeDef SSD1306::Start() {
 }
 
 HAL_StatusTypeDef SSD1306::WriteCommand(uint8_t command) {
-	return HAL_I2C_Mem_Write(_hi2c, I2C_ADDR, 0x00, I2C_MEMADD_SIZE_8BIT, &command, 1, 10);
+	return HAL_I2C_Mem_Write(_hi2c, _i2c_address, 0x00, I2C_MEMADD_SIZE_8BIT, &command, 1, 5);
 }
 
-void SSD1306::Fill(Color color) {
+void SSD1306::Fill(Color color/* = Color::White*/) {
 	// 填充屏幕缓冲区
-	for (auto &byte : _buffer) {
-		byte = (color == Color::Black) ? 0x00 : 0xFF;
-	}
+	_buffer.fill((color == Color::Black) ? 0x00 : 0xFF);
 }
 
 void SSD1306::UpdateScreen() {
-	HAL_I2C_Mem_Write_DMA(_hi2c, I2C_ADDR, 0x40, I2C_MEMADD_SIZE_8BIT, _buffer.data(), _buffer.size());
+	HAL_I2C_Mem_Write_DMA(_hi2c, _i2c_address, 0x40, I2C_MEMADD_SIZE_8BIT, _buffer.data(), _buffer.size());
 }
 
 void SSD1306::DrawPixel(uint8_t x, uint8_t y, Color color/* = Color::White*/) {
@@ -106,7 +105,7 @@ char SSD1306::WriteChar(char ch, SSD1306Font Font, Color color/* = Color::White*
 		return 0;
 	}
 
-	// 将字体翻译到屏幕缓冲区
+	// 将字体输出到屏幕缓冲区
 	for (uint32_t i = 0; i < Font.FontHeight; i++) {
 		uint32_t b = Font.data[(ch - 32) * Font.FontHeight + i];
 		for (uint32_t j = 0; j < Font.FontWidth; j++) {
@@ -118,7 +117,7 @@ char SSD1306::WriteChar(char ch, SSD1306Font Font, Color color/* = Color::White*
 		}
 	}
 
-	// 当前空间已被占用
+	// 移动光标
 	_currentX += Font.FontWidth;
 
 	// 返回写入的字符以进行验证
@@ -126,18 +125,16 @@ char SSD1306::WriteChar(char ch, SSD1306Font Font, Color color/* = Color::White*
 }
 
 char SSD1306::WriteString(const char *str, SSD1306Font Font, Color color/* = Color::White*/) {
-	// 写入直到空字节
+	// 反复写入直到空字节
 	while (*str) {
 		if (WriteChar(*str, Font, color) != *str) {
 			// 字符无法写入
 			return *str;
 		}
 
-		// 下一个字符
 		str++;
 	}
 
-	// 一切正常
 	return *str;
 }
 

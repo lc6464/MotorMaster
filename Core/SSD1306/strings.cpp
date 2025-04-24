@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <cstring>
 
-#include "strings.hpp"
+#include "strings.h"
 
 // 辅助函数：反转字符串
 static void reverse(char *str, int length) {

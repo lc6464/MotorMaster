@@ -1,11 +1,11 @@
 #include "tim.h"
 
-#include "Button_Shared.hpp"
-#include "EC11_Shared.hpp"
-#include "Motor_Shared.hpp"
-#include "SSD1306_Shared.hpp"
-#include "Status.hpp"
-#include "strings.hpp"
+#include "Button_Shared.h"
+#include "EC11_Shared.h"
+#include "Motor_Shared.h"
+#include "SSD1306_Shared.h"
+#include "Status.h"
+#include "strings.h"
 
 static uint16_t targetFlashingScaler = 0;
 

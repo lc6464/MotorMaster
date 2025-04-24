@@ -1,4 +1,4 @@
-#include "Motor_Shared.hpp"
+#include "Motor_Shared.h"
 
 static const PortPinPair motorBrakePair(Motor_Brake_GPIO_Port, Motor_Brake_Pin);
 static const PortPinPair motorPowerPair(Motor_Power_GPIO_Port, Motor_Power_Pin);

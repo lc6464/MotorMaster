@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Motor.hpp"
+#include "Motor.h"
 
 // 电机
 extern Motor motor;

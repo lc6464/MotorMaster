@@ -1,4 +1,4 @@
-#include "Motor.hpp"
+#include "Motor.h"
 #include <algorithm>
 
 void Motor::PowerOn() {

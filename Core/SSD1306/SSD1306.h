@@ -2,10 +2,31 @@
 
 #include <array>
 
-#include "main.h"
-#include "SSD1306_Fonts.hpp"
+#include "i2c.h"
+#include "SSD1306_Fonts.h"
 
 class SSD1306 {
+private:
+	static constexpr uint16_t WIDTH = 128;
+	static constexpr uint16_t HEIGHT = 64;
+	static constexpr uint8_t COM_LR_REMAP = 0;
+	static constexpr uint8_t COM_ALTERNATIVE_PIN_CONFIG = 1;
+
+	uint8_t _i2c_address;     // I2C 地址
+	I2C_HandleTypeDef *_hi2c; // I2C 句柄
+	std::array<uint8_t, WIDTH *HEIGHT / 8> _buffer{}; // 屏幕缓冲区
+	uint16_t _currentX; // 当前 X 坐标
+	uint16_t _currentY; // 当前 Y 坐标
+	uint8_t _inverted;  // 是否反转
+	uint8_t _started;   // 是否初始化
+
+	/**
+	 * @brief 发送命令到 OLED
+	 * @param command 命令
+	 * @return 操作状态
+	 */
+	HAL_StatusTypeDef WriteCommand(uint8_t command);
+
 public:
 	enum class Color {
 		Black = 0, // 黑色，不显示
@@ -15,8 +36,10 @@ public:
 	/**
 	 * @brief 构造函数，初始化屏幕
 	 * @param hi2c I2C 句柄
+	 * @param address I2C 地址
 	 */
-	explicit SSD1306(I2C_HandleTypeDef *hi2c) : _hi2c(hi2c), _currentX(0), _currentY(0), _inverted(0), _started(0) { }
+	explicit SSD1306(I2C_HandleTypeDef *hi2c, uint8_t address = 0x78)
+		: _i2c_address(address), _hi2c(hi2c), _currentX(0), _currentY(0), _inverted(0), _started(0) { }
 
 	/**
 	 * @brief 启动屏幕
@@ -33,7 +56,7 @@ public:
 	 * @brief 填充屏幕
 	 * @param color 填充颜色
 	 */
-	void Fill(Color color);
+	void Fill(Color color = Color::White);
 
 	/**
 	 * @brief 清屏
@@ -78,24 +101,10 @@ public:
 	 */
 	void InvertColors();
 
-private:
-	static constexpr uint8_t I2C_ADDR = 0x78;
-	static constexpr uint16_t WIDTH = 128;
-	static constexpr uint16_t HEIGHT = 64;
-	static constexpr uint8_t COM_LR_REMAP = 0;
-	static constexpr uint8_t COM_ALTERNATIVE_PIN_CONFIG = 1;
-
-	I2C_HandleTypeDef *_hi2c; ///< I2C 句柄
-	std::array<uint8_t, WIDTH *HEIGHT / 8> _buffer{}; ///< 屏幕缓冲区
-	uint16_t _currentX; ///< 当前 X 坐标
-	uint16_t _currentY; ///< 当前 Y 坐标
-	uint8_t _inverted; ///< 是否反转
-	uint8_t _started; ///< 是否初始化
-
 	/**
-	 * @brief 发送命令到 OLED
-	 * @param command 命令
-	 * @return 操作状态
+	 * @brief 获取屏幕缓冲区引用
+	 * @return 屏幕缓冲区引用
 	 */
-	HAL_StatusTypeDef WriteCommand(uint8_t command);
+	std::array<uint8_t, WIDTH *HEIGHT / 8> &GetBuffer() { return _buffer; }
+
 };

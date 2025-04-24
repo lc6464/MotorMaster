@@ -2,7 +2,7 @@
 
 #include <array>
 #include "tim.h"
-#include "PortPinPair.hpp"
+#include "PortPinPair.h"
 
 // 电机类
 class Motor {

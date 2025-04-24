@@ -1,4 +1,4 @@
-#include "Button.hpp"
+#include "Button.h"
 
 Button::Button(const PortPinPair &portPin, uint32_t longPressDuration)
 	: _portPin(portPin), _currentState(State::Released), _pressDuration(0),

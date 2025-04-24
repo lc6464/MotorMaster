@@ -4,8 +4,8 @@
 
 #include "tim.h"
 
-#include "Button.hpp"
-#include "PortPinPair.hpp"
+#include "Button.h"
+#include "PortPinPair.h"
 
 /**
  * @brief EC11 编码器类，用于读取编码器数据

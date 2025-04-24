@@ -1,4 +1,4 @@
-#include "EC11.hpp"
+#include "EC11.h"
 
 HAL_StatusTypeDef EC11::Start() {
 	__HAL_TIM_SET_COUNTER(&_htim, 127); // 将计数器初始值设置为127

@@ -4,11 +4,11 @@
 #include "tim.h"
 #include "gpio.h"
 
-#include "EC11_Shared.hpp"
-#include "Motor_Shared.hpp"
-#include "Status.hpp"
-#include "SSD1306_Shared.hpp"
-#include "UserControlCallback.hpp"
+#include "EC11_Shared.h"
+#include "Motor_Shared.h"
+#include "Status.h"
+#include "SSD1306_Shared.h"
+#include "UserControlCallback.h"
 
 /**
 	* @brief  The application entry point.

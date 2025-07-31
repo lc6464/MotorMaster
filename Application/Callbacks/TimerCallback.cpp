@@ -2,6 +2,7 @@
 
 #include "Button_Shared.h"
 #include "EC11_Shared.h"
+#include "INA226_Shared.h"
 #include "Motor_Shared.h"
 #include "SSD1306_Shared.h"
 #include "Status.h"
@@ -9,6 +10,8 @@
 #include "WatchDog_Shared.h"
 
 static uint16_t flashingScaler = 0;
+
+static uint8_t displayPowerItem = 0; // 0: 电压；1: 电流；2: 功率
 
 void UpdateScreen(void) {
 	// Power Off
@@ -82,6 +85,28 @@ void UpdateScreen(void) {
 		flashingScaler = 0;
 	}
 
+	// 左上角交替显示电压、电流、功率
+	char suffixes[3] = { 'V', 'A', 'W' };
+	ssd1306.SetCursor(0, 0);
+
+	std::array<std::optional<float>, 3> powerData = {
+		ina.GetVoltage(),
+		ina.GetCurrent(),
+		ina.GetPower()
+	};
+
+	if (powerData[displayPowerItem].has_value()) {
+		char powerStr[10] = { 0 };
+
+		floatToString(powerData[displayPowerItem].value(), powerStr, 3);
+
+		ssd1306.WriteString(powerStr, SSD1306Fonts::Font_7x10);
+	} else {
+		ssd1306.WriteString("N/A", SSD1306Fonts::Font_7x10);
+	}
+
+	ssd1306.WriteChar(suffixes[displayPowerItem], SSD1306Fonts::Font_7x10);
+
 	// // 输出速度百分比
 	// ssd1306.SetCursor(0, 20);
 	// ssd1306.WriteString("Speed:", SSD1306Fonts::Font_11x18);
@@ -101,6 +126,7 @@ void UpdateScreen(void) {
 }
 
 static uint16_t timer3_scaler = 0; // 0 ~ 999
+static uint16_t displayPowerItem_scaler = 0;
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Instance == TIM3) { // 1ms
@@ -131,10 +157,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 				Status::speedPercentage = std::max(Status::targetSpeedPercentage, static_cast<int8_t>(Status::speedPercentage - 1));
 			}
 
-
 			// 更新屏幕显示
 			UpdateScreen();
 
+		}
+
+		// 100ms
+		if (timer3_scaler % 100 == 0) {
+			ina.Update(); // 更新 INA226 传感器数据
 		}
 
 		// 500ms
@@ -142,10 +172,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			motor.SetSpeed(static_cast<uint16_t>(Status::speedPercentage) * 40); // 0~100 -> 0~4000
 		}
 
-
 		// 分频器归零
 		if (++timer3_scaler >= 1000) {
 			timer3_scaler = 0;
+
+			if (++displayPowerItem_scaler >= 3) { // 每 3 秒切换一次显示的电压/电流/功率
+				displayPowerItem_scaler = 0;
+
+				if (++displayPowerItem >= 3) {
+					displayPowerItem = 0;
+				}
+			}
+
 		}
 	}
 }

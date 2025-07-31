@@ -23,9 +23,6 @@ endif()
 # Set the project name
 set(CMAKE_PROJECT_NAME MotorMaster)
 
-# Include toolchain file
-include("cmake/gcc-arm-none-eabi.cmake")
-
 # Enable compile command to ease indexing with e.g. clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
@@ -62,6 +59,9 @@ target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined symbols
 )
 
+# Remove wrong libob.a library dependency when using cpp files
+list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
+
 # Add linked libraries
 target_link_libraries(${CMAKE_PROJECT_NAME}
     stm32cubemx
@@ -85,22 +85,21 @@ add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
 
 # 定义下载目标
 add_custom_target(download
-    COMMAND openocd -f interface/cmsis-dap-swd.cfg -f target/stm32f1x.cfg -c "program ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex verify reset exit"
+    COMMAND openocd -f interface/cmsis-dap-swd.cfg -f target/stm32f1x.cfg -c "program ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex verify exit"
     DEPENDS ${PROJECT_NAME}
     COMMENT "Downloading ${PROJECT_NAME}.hex to target using OpenOCD"
 )
 
 # 查找所有的 .c、.cpp 和 .s 文件
 file(GLOB_RECURSE ADDITIONAL_SOURCE_FILES
-    "${CMAKE_CURRENT_SOURCE_DIR}/Core/*.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Core/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Core/*.s"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Application/*.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Application/*.cpp"
 )
 
 # 查找所有包含 .h 和 .hpp 文件的目录
 file(GLOB_RECURSE HEADER_FILES
-    "${CMAKE_CURRENT_SOURCE_DIR}/Core/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Core/*.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Application/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Application/*.hpp"
 )
 set(ADDITIONAL_INCLUDE_DIRS "")
 foreach(HEADER ${HEADER_FILES})
@@ -110,8 +109,8 @@ endforeach()
 list(REMOVE_DUPLICATES ADDITIONAL_INCLUDE_DIRS)
 
 # 打印找到的源文件和包含目录（可选，用于调试）
-message(STATUS "Found additional source files: ${ADDITIONAL_SOURCE_FILES}")
-message(STATUS "Found additional include directories: ${ADDITIONAL_INCLUDE_DIRS}")
+# message(STATUS "Found additional source files: ${ADDITIONAL_SOURCE_FILES}")
+# message(STATUS "Found additional include directories: ${ADDITIONAL_INCLUDE_DIRS}")
 
 # 将找到的源文件添加到目标
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${ADDITIONAL_SOURCE_FILES})

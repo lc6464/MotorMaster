@@ -1,5 +1,7 @@
 #include "INA226.h"
 
+#include <bit>
+
 INA226::Status INA226::Init() {
 	// 根据设计目标计算配置
 	constexpr auto avgMode = AvgMode::AVG_16;
@@ -78,25 +80,22 @@ std::optional<float> INA226::GetPower() const {
 }
 
 INA226::Status INA226::_WriteRegister(Register reg, uint16_t value) {
-	uint8_t data[2] = {
-		static_cast<uint8_t>((value >> 8) & 0xFF), // Big-endian MSB
-		static_cast<uint8_t>(value & 0xFF)         // Big-endian LSB
-	};
+	auto swappedValue = std::byteswap(value); // 将值转换为大字节序
+	auto data = reinterpret_cast<uint8_t *>(&swappedValue);
 
-	auto status = HAL_I2C_Mem_Write(_i2cHandle, _deviceAddress, static_cast<uint16_t>(reg), I2C_MEMADD_SIZE_8BIT, data, sizeof(data), I2C_TIMEOUT_MS);
+	auto status = HAL_I2C_Mem_Write(_i2cHandle, _deviceAddress, static_cast<uint16_t>(reg), I2C_MEMADD_SIZE_8BIT, data, sizeof(swappedValue), I2C_TIMEOUT_MS);
 	return (status == HAL_OK) ? Status::OK : Status::ErrorWrite;
 }
 
 std::optional<uint16_t> INA226::_ReadRegister(Register reg) {
-	uint8_t readBuffer[2]{};
+	uint8_t buffer[2]{};
 
 	// 从芯片读取2个字节
-	auto status = HAL_I2C_Mem_Read(_i2cHandle, _deviceAddress, static_cast<uint16_t>(reg), I2C_MEMADD_SIZE_8BIT, readBuffer, sizeof(readBuffer), I2C_TIMEOUT_MS);
+	auto status = HAL_I2C_Mem_Read(_i2cHandle, _deviceAddress, static_cast<uint16_t>(reg), I2C_MEMADD_SIZE_8BIT, buffer, sizeof(buffer), I2C_TIMEOUT_MS);
 	if (status != HAL_OK) {
 		return std::nullopt;
 	}
 
-	// 将接收到的字节（大端序）组合成一个16位值
-	uint16_t value = (static_cast<uint16_t>(readBuffer[0]) << 8) | readBuffer[1];
+	auto value = std::byteswap(*reinterpret_cast<uint16_t *>(buffer)); // 将值转换为小字节序
 	return value;
 }
